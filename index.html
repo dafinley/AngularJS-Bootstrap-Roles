@@ -1,0 +1,106 @@
+<!doctype html>
+<html class="no-js" >
+<head>
+<title>AngularJS Bootstrap</title>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+<meta name="description" content="AngularJS Bootstrap"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="msapplication-tap-highlight" content="no" />
+<meta property="og:title" content="AngularJS Bootstrap">
+<meta property="og:url" content="https://dafinley.github.io/AngularJSBS">
+<meta property="og:site_name" content="AngularJS Bootstrap">
+<meta property="og:description" content="AngularJS Bootstrap">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.15/angular-ui-router.min.js"></script>
+<style>
+  body{
+    padding-top: 50px;
+  }
+  .contain-content{
+    padding: 40px 15px;
+    text-align: center;
+    max-width:500px;
+    margin:0 auto;
+  }
+</style>
+</head>
+<body ng-app="angularjsbs">
+<nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Brand</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="https://github.com/dafinley/">Github</a></li>
+            <li><a ui-sref="login">Login</a></li>
+            <li><a ui-sref="admin">Admin</a></li>
+            <li><a ui-sref="normal">Normal</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+<div class="container">
+<div class="contain-content">
+<div ui-view></div>
+</div>
+</div>
+<script type="text/javascript">
+angular.module('angularjsbs', ['ui.router']).config(function($stateProvider, $urlRouterProvider, USER_ROLES){
+  
+  $urlRouterProvider.otherwise('login');
+  
+  
+  $stateProvider
+  .state('base', {abstract: true, url: '', templateUrl:'main.html', controller:'MainCtrl' })
+  .state('login', {parent:'base', url: '/login', templateUrl:'login.html', controller:'LoginCtrl' })
+  .state('admin', {parent:'base', url: '/admin', templateUrl:'admin.html', controller:'AdminCtrl', data: {authorizedRoles: [USER_ROLES.superAdmin, USER_ROLES.admin]}})
+  .state('normal',{parent:'base', url: '/normal', templateUrl:'normal.html', controller:'AdminCtrl', data: {authorizedRoles: [USER_ROLES.superAdmin, USER_ROLES.admin, USER_ROLES.normal]}});
+  
+  
+  
+}).run(function($rootScope, $state, $http, AUTH_EVENTS, AuthService){
+  
+  $rootScope.$on('$stateChangeStart', function(event, next){
+    
+    if(next.name !== 'login'){
+      var authorizedRoles = next.data.authorizedRoles;
+      
+      if(!AuthService.isAuthorized(authorizedRoles)){
+        
+        event.preventDefault();
+        
+        if(AuthService.isAuthenticated())
+           $rootScope.$broadcast(AUTH_EVENTS.notAuthorized);
+        else
+           $rootScope.$broadcast(AUTH_EVENTS.notAuthenticated);
+           
+        $state.go('login');
+        alert('Access Denied');
+        
+      }
+    }else if(next.name == 'admin' && AuthService.isAdmin())
+       $state.go('admin');
+       
+       
+  })
+  
+})
+</script>
+<script type="text/javascript" src="ctrl.js"></script>
+<script type="text/javascript" src="loginFactory.js"></script>
+</body>
+</html>
